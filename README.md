@@ -24,6 +24,7 @@ System 1 velocities together with the System 2 sites.
 ```
 PyVelrot/
 ├── pyvelrot.py                     # Python module
+├── frame_registry.py               # Built-in GAMIT frame registry (78 frames)
 ├── requirements.txt
 ├── PyVelrot_validation.ipynb       # Validation notebook (no GAMIT needed)
 ├── data/
@@ -154,6 +155,49 @@ The horizontal residuals are dominated by display-precision rounding (the `.vel`
 stores velocities to 2 decimal places, ±0.005 mm/yr). The vertical residual (< 2% of
 the 3 mm/yr vertical uncertainty) comes from floating-point differences between
 `numpy.linalg.solve`/`inv` and Fortran's Gaussian-elimination solver `invert_vis`.
+
+---
+
+## Reference Frames
+
+PyVelrot includes `frame_registry.py`, a self-contained Python module that
+implements the same 78 named reference frames defined in the GAMIT/GLOBK
+Fortran subroutine `frame_to_fra.f` (T. A. Herring, last updated 2018-01-17).
+
+All rotation-pole components are stored in **deg/Myr** relative to NNR-NUVEL-1A.
+No external GAMIT installation or `frames.dat` file is required.
+
+### Supported frame families
+
+| Family | Frames | Source |
+|--------|--------|--------|
+| NUVEL-1A plates | `PCFC`, `COCO`, `NAZC`, `CARB`, `SAFD`, `ANTA`, `INDI`, `AUST`, `AFRC`, `ARAB`, `EURA`, `NAFD`, `JUAN`, `PHIL`, `RIVERA`, `SCOTIA` | DeMets et al. (1990) |
+| Special / legacy | `NUV-NNR`, `AM-02`, `ITRF93`, `ITRF94`, `GG_PCFC` | GAMIT internal |
+| ITRF2000 PMM | `ANTA_I00`, `AUST_I00`, `EURA_I00`, `NOAM_I00`, `PCFC_I00`, `SOAM_I00`, `ITRF00` | Altamimi et al. (2002) |
+| ITRF2005 PMM | `AMUR_I05` … `ITRF05` (15 entries) | Altamimi et al. (2007) |
+| ITRF2008 PMM | `ANTA_I08` … `AMUR_I08` (15 entries) | Altamimi et al. (2012) |
+| ITRF2014 PMM | `ANTA_I14` … `SOMA_I14` (11 entries) | Altamimi et al. (2017) |
+| Arabian special | `ARAB_MCC`, `ARAB_M06` | McClusky et al. (2003); Reilinger et al. (2006) |
+| Aliases | `ITRF14`, `IGS14`, `NAM14`, `ANT14`, `NAM08`, `IGS08` | — |
+
+### Usage
+
+```python
+from frame_registry import frame_to_frame, list_frames
+
+# Print the full frame table
+list_frames()
+
+# Rotation vector (rad/yr) from EURA_I14 to ITRF14
+rot = frame_to_frame("EURA_I14", "ITRF14")
+```
+
+Pass any registered frame name as `sys1_frame`, `sys2_frame`, or `out_frame`
+in `PyVelrot.run()`.  Use `"NONE"` to skip frame rotation (no-op).
+
+The fallback to `./frames.dat` or `~/gg/tables/frames.dat` that exists in the
+Fortran source is **not implemented**.  All 78 standard GAMIT frames are
+built-in.
 
 ---
 

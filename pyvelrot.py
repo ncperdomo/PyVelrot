@@ -134,23 +134,13 @@ def cross_product(omega: np.ndarray, pos: np.ndarray) -> Tuple[np.ndarray, float
 
 
 # ---------------------------------------------------------------------------
-# Frame lookup (returns zero for NONE frames)
+# Frame lookup — delegates to frame_registry
 # ---------------------------------------------------------------------------
 
-def frame_to_frame(frame_out: str, frame_in: str) -> np.ndarray:
-    """
-    Return the rotation vector (rad/yr) such that
-        V_out = V_in + (rot_vec × X).
-    Only NONE frames are supported; all others raise NotImplementedError.
-    """
-    fo = frame_out.strip().upper()
-    fi = frame_in.strip().upper()
-    if fo == fi or fo == "NONE" or fi == "NONE":
-        return np.zeros(3)
-    raise NotImplementedError(
-        f"Frame lookup '{frame_in}' -> '{frame_out}' is not implemented. "
-        "Pass velocities already in the target frame and use NONE."
-    )
+try:
+    from frame_registry import frame_to_frame, list_frames, FRAME_REGISTRY, FRAME_NAMES
+except ImportError:
+    from .frame_registry import frame_to_frame, list_frames, FRAME_REGISTRY, FRAME_NAMES
 
 
 # ---------------------------------------------------------------------------
