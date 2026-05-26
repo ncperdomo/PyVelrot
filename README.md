@@ -39,7 +39,7 @@ PyVelrot/
 ## Installation
 
 ```bash
-pip install numpy pandas matplotlib jupyter   # notebook dependencies
+pip install numpy pandas matplotlib jupyter cartopy   # notebook dependencies
 ```
 
 No compiled code; no GAMIT/GLOBK installation required.
