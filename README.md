@@ -201,6 +201,35 @@ built-in.
 
 ---
 
+## Performance
+
+The hot path was optimized in May 2026. Benchmark: 429 sys1 + 3252 sys2 sites, 178 links, 6-parameter TR transformation (Apple M-series, NumPy/BLAS).
+
+| Version | Median runtime |
+|---------|---------------|
+| Original | ~9.6 s |
+| Optimized | ~142 ms |
+| **Speedup** | **~68×** |
+
+Run the built-in benchmark:
+
+```bash
+python pyvelrot.py --benchmark 5   # 5 repetitions
+```
+
+### What was optimized
+
+| Bottleneck | Original | Fix |
+|---|---|---|
+| `_output_frame` proximity check (65% of runtime) | Per-output-site Python loop over all 3,252 sys2 sites via `np.linalg.norm` | Precompute vectorized pairwise distance matrix before the output loop using the BLAS formula `‖p₁‖² + ‖p₂‖² − 2·p₁p₂ᵀ`; extract boolean proximity arrays with `np.where` |
+| `_read_fund_sites` eq_dist matching (13%) | O(N₁×N₂) = 1.4 M scalar `np.linalg.norm` calls | Same BLAS distance matrix |
+| `_increment_norm` | 17K-op triple Python loop per WLS call | `(A·w)ᵀ A` matrix product |
+| `_frame_update` | Per-site `cross_product` loop | `np.cross` broadcast over all sites |
+
+Numerical output is bit-identical to the original: batch NumPy transcendentals (`sin`/`cos` via SVML) can give 1-ULP-different results from scalar libc, shifting displayed velocities by ±0.01 mm/yr at rounding boundaries. The per-site scalar paths in `read_vel_file` and `_update_tran` are preserved exactly to avoid this.
+
+---
+
 ## Mapping to Fortran subroutines
 
 | Python | Fortran | Purpose |
